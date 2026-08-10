@@ -1,79 +1,131 @@
 # ROS 2 Vision-Guided Intelligent Manipulator
 
-中文名称：基于 ROS 2 的视觉引导智能机械臂抓取系统
+**中文名称：基于 ROS 2 的视觉引导智能机械臂抓取系统**
 
-这是一个面向机器人初学者的长期学习项目。项目将从纯 Python 的二维二连杆机械臂开始，逐步升级为 ROS 2、Gazebo、MoveIt 2 和虚拟相机协同工作的抓取与放置系统。
+这是一个面向机器人初学者的长期学习项目。项目从纯 Python 的二维二连杆机械臂开始，计划逐步升级为使用 ROS 2、Gazebo、MoveIt 2 和虚拟相机的抓取与放置系统。
 
-> 当前状态：Version 1.0 / Step 1 - 工程骨架。机械臂数学模型、绘图和交互功能尚未实现。
+> 当前状态：**Version 1.0 已完成**。本版本只包含 Python 二维 2R 机械臂，不包含逆运动学、轨迹规划、控制、避障或 ROS 2。
 
-## 项目目标
+![Version 1.0 interactive demo](docs/images/v1-0-interactive-demo.png)
 
-在普通电脑上通过纯软件仿真完成机械臂建模、规划、控制、视觉定位、任务执行和失败恢复。项目不依赖真实机械臂，也不会用语言模型直接生成危险的关节控制命令。
+## Version 1.0 功能
 
-## 五代路线
+- 使用 dataclass 表示关节限制和二维二连杆机械臂。
+- 检查连杆长度、关节限制和初始关节角是否合法。
+- 自行实现二维 2R 机械臂正运动学。
+- 使用 Matplotlib 绘制基座、关节、连杆和末端执行器。
+- 使用 `q1`、`q2` 滑块交互修改机械臂构型。
+- 计算理想几何工作空间及目标点可达性。
+- 鼠标点击目标点并显示 `reachable` 或 `unreachable`。
+- 记录并显示滑块运动过程中末端执行器的轨迹。
+- 使用 pytest 验证数据模型、运动学、工作空间和交互行为。
 
-| 版本 | 主题 | 当前状态 |
-| --- | --- | --- |
-| 1.0 | Python 二维机械臂基础模型 | 进行中：基础骨架 |
-| 2.0 | 逆运动学、轨迹、PID 和避障 | 未开始 |
-| 3.0 | ROS 2、Gazebo、MoveIt 2 三维抓取 | 未开始 |
-| 4.0 | 虚拟相机视觉引导抓取 | 未开始 |
-| 5.0 | 任务规划、失败检测和自动恢复 | 未开始 |
+## 快速体验
 
-每一代都在上一代代码和知识上升级。只有当前版本通过测试并完成文档后，才进入下一代。
+完成一次环境安装后，推荐直接在 VS Code 中运行：
 
-## 当前步骤包含什么
+1. 使用 VS Code 打开项目文件夹。
+2. 在右下角选择项目中的 `.venv` Python 解释器。
+3. 打开 [`examples/run_interactive_arm_2d.py`](examples/run_interactive_arm_2d.py)。
+4. 点击编辑器右上角的 **Run Python File** 三角形按钮。
 
-- 使用 `src` 布局创建可安装的 Python 包 `manipulator_2d`。
-- 使用 `pyproject.toml` 管理项目元数据和开发工具。
-- 使用 `pytest` 验证安装后的包能够正常导入。
-- 使用 Ruff 检查基础代码格式和常见问题。
-- 准备 Windows、WSL2 和 Ubuntu 安装说明。
+运行窗口中可以：
 
-当前步骤**不包含**正运动学、逆运动学、绘图、ROS 2 或机械臂控制代码。
+- 拖动 `q1 (rad)` 和 `q2 (rad)` 改变两个关节角。
+- 观察蓝色 `End-effector path` 末端运动轨迹。
+- 在坐标图中单击鼠标左键选择目标点。
+- 观察绿色可达目标或红色不可达目标。
 
-## 快速开始
+关闭窗口后，本次内存中的目标点和轨迹会被清空。
 
-Windows PowerShell：
+首次安装、解释器选择和常见错误见 [`docs/setup.md`](docs/setup.md)。
 
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-python -m pytest
-```
+## 一条命令运行
 
-如果电脑安装的是 Python 3.12，可以把第一条命令中的 `-3.11` 改为 `-3.12`。
-
-WSL2 或 Ubuntu：
+在已经安装本项目并启用虚拟环境的情况下：
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-python -m pytest
+python examples/run_interactive_arm_2d.py
 ```
 
-更完整的环境说明见 [`docs/setup.md`](docs/setup.md)。
+## 数学模型
 
-## 目录结构
+机械臂包含两根连杆 `L1`、`L2` 和两个旋转关节 `q1`、`q2`，因此称为 2R 机械臂。`q1` 是第一根连杆相对于世界坐标系 x 轴的角度，`q2` 是第二根连杆相对于第一根连杆的角度。
+
+```text
+world y
+  ^
+  |               end effector
+  |                    *
+  |                   /  L2
+  |          joint 2 o   q2
+  |                 /
+  |              L1/ q1
+  |               /
+  +--------------o------------------> world x
+              base / joint 1
+```
+
+正运动学使用以下公式：
+
+```text
+x1 = L1 * cos(q1)
+y1 = L1 * sin(q1)
+
+xe = x1 + L2 * cos(q1 + q2)
+ye = y1 + L2 * sin(q1 + q2)
+```
+
+目标点到基座的距离为 `r`。在暂不考虑关节限制时，理想几何可达条件是：
+
+```text
+abs(L1 - L2) <= r <= L1 + L2
+```
+
+## 软件结构
+
+```mermaid
+flowchart LR
+    Model["model.py\n机械臂数据与约束"] --> Kinematics["kinematics.py\n正运动学与可达性"]
+    Kinematics --> Visualization["visualization.py\n静态绘图"]
+    Model --> Visualization
+    Visualization --> App["app.py\n滑块、点击与轨迹"]
+    Kinematics --> App
+    User["用户操作"] --> App
+```
 
 ```text
 ros2-intelligent-manipulator/
-├── docs/                       # 安装说明和后续设计文档
-├── examples/                   # 可以直接运行的示例（后续步骤加入）
-├── src/
-│   └── manipulator_2d/         # Version 1.0/2.0 的 Python 包
-├── tests/                      # 自动化测试
-├── .gitignore                 # 不提交缓存、虚拟环境和 ROS 构建产物
-├── LICENSE                    # MIT 开源许可证
-├── pyproject.toml             # 安装、依赖和工具配置
-└── README.md                  # 项目入口说明
+├── docs/
+│   ├── images/                         # README 使用的真实运行截图
+│   ├── releases/v1.0.0.md              # Version 1.0 发布说明
+│   └── setup.md                        # 环境安装与故障排查
+├── examples/
+│   ├── check_reachability.py           # 命令行可达性示例
+│   ├── run_arm_2d.py                   # 静态机械臂示例
+│   └── run_interactive_arm_2d.py       # 推荐的完整交互 Demo
+├── src/manipulator_2d/
+│   ├── app.py                          # 交互应用
+│   ├── kinematics.py                   # 运动学与工作空间
+│   ├── model.py                        # 数据模型和有效性检查
+│   └── visualization.py                # Matplotlib 绘图
+├── tests/                              # 自动化测试
+├── LICENSE
+├── pyproject.toml
+└── README.md
 ```
 
-## 验证
+## 示例程序
+
+| 文件 | 用途 | 是否打开图形窗口 |
+| --- | --- | --- |
+| `examples/run_interactive_arm_2d.py` | 滑块、目标点击、可达性和轨迹 | 是 |
+| `examples/run_arm_2d.py` | 绘制一个固定构型 | 是 |
+| `examples/check_reachability.py` | 输出工作空间半径和目标判断 | 否 |
+
+更多说明见 [`examples/README.md`](examples/README.md)。
+
+## 测试与检查
 
 ```bash
 python -m pytest
@@ -81,11 +133,54 @@ ruff check .
 ruff format --check .
 ```
 
-正常情况下，最小测试应当全部通过，Ruff 不报告错误。
+Version 1.0 验收时共有 **36 项测试**，覆盖以下内容：
 
-## 下一步
+- 合法和非法的数据模型输入。
+- 正运动学已知构型与浮点近似比较。
+- 工作空间内边界、外边界和不可达目标。
+- 绘图坐标是否来自正运动学结果。
+- 滑块更新、目标点击和轨迹记录。
+- Python 包版本与最小导入检查。
 
-定义二维二连杆机械臂的数据模型，包括连杆长度、关节角和关节限制；暂时仍不实现正运动学。
+## V1.0 验收
+
+- [x] 一条命令可以启动二维机械臂 Demo。
+- [x] 修改 `q1`、`q2` 后图形正确更新。
+- [x] 正运动学结果经过自动化测试。
+- [x] 点击目标时显示目标位置及几何可达性。
+- [x] 显示基座、两个关节、末端执行器和运动轨迹。
+- [x] README 包含安装、运行、测试和限制说明。
+- [x] pytest、Ruff 和格式检查全部通过。
+
+## 实现边界
+
+我们自行实现了数据模型、输入检查、正运动学公式、理想工作空间判断，以及交互应用中的状态管理和轨迹记录。
+
+Matplotlib 提供图形窗口、坐标轴、绘图元素、滑块控件和鼠标事件基础设施。项目没有把第三方库提供的绘图功能描述成自行实现的机器人算法。
+
+## 已知限制
+
+- 当前是理想二维刚性机械臂，没有质量、惯量、摩擦或动力学。
+- 可达性只依据连杆长度形成的理想圆环，尚未把关节限制加入可达性求解。
+- 点击可达目标不会让机械臂自动移动，因为逆运动学尚未实现。
+- 蓝色轨迹连接滑块事件采样到的位置，不是规划器生成的时间轨迹。
+- 当前没有碰撞检测、障碍物、PID 控制、ROS 2、Gazebo 或 MoveIt 2。
+
+## 五代路线
+
+| 版本 | 主题 | 状态 |
+| --- | --- | --- |
+| 1.0 | Python 二维机械臂基础模型 | 已完成 |
+| 2.0 | 逆运动学、轨迹规划、PID 和避障 | 未开始 |
+| 3.0 | ROS 2、Gazebo、MoveIt 2 三维抓取 | 未开始 |
+| 4.0 | 虚拟相机视觉引导抓取 | 未开始 |
+| 5.0 | 任务规划、失败检测和自动恢复 | 未开始 |
+
+下一代开始前会先总结 Version 1.0 的代码、限制和升级理由，不会一次性生成后续版本。
+
+## Release Notes
+
+- [Version 1.0.0](docs/releases/v1.0.0.md)
 
 ## License
 

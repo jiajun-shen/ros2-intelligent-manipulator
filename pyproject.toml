@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ros2-intelligent-manipulator"
-version = "0.1.0"
+version = "1.0.0"
 description = "An educational, versioned path toward a ROS 2 vision-guided manipulator."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,7 +21,9 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
-dependencies = []
+dependencies = [
+  "matplotlib>=3.10,<4",
+]
 
 [project.optional-dependencies]
 dev = [
