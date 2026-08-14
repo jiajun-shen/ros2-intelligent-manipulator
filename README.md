@@ -4,7 +4,19 @@
 
 这是一个面向机器人初学者的长期学习项目。项目从纯 Python 的二维二连杆机械臂开始，计划逐步升级为使用 ROS 2、Gazebo、MoveIt 2 和虚拟相机的抓取与放置系统。
 
-> 当前状态：**Version 1.0 已完成**。本版本只包含 Python 二维 2R 机械臂，不包含逆运动学、轨迹规划、控制、避障或 ROS 2。
+> 当前状态：**Version 1.0 已完成，Version 2.0 开发中**。V1.0 已由 `v1.0.0` 永久保存；V2.0 正在独立分支中逐步增加逆运动学、轨迹规划、控制与避障。
+
+## 版本导航
+
+| 版本 | 状态 | 代码入口 | 主要内容 |
+| --- | --- | --- | --- |
+| V1.0 | 已完成 | [`v1.0.0`](https://github.com/jiajun-shen/ros2-intelligent-manipulator/tree/v1.0.0) | 数据模型、正运动学、交互绘图、工作空间与轨迹记录 |
+| V2.0 | 开发中 | [`V2.0 development`](https://github.com/jiajun-shen/ros2-intelligent-manipulator/tree/agent/v2-0-constrained-inverse-kinematics) | 解析逆运动学、奇异检测与关节限制；其他功能逐步加入 |
+| V3.0 | 未开始 | 完成 V2.0 后创建 | ROS 2、Gazebo、MoveIt 2 三维抓取 |
+| V4.0 | 未开始 | 完成 V3.0 后创建 | 虚拟相机视觉引导抓取 |
+| V5.0 | 未开始 | 完成 V4.0 后创建 | 任务规划、失败检测和自动恢复 |
+
+仓库采用“一个连续项目、每代独立开发分支、完成后合并到 `main` 并创建永久标签”的方式管理。详细规则见 [`docs/versioning.md`](docs/versioning.md)。
 
 ![Version 1.0 interactive demo](docs/images/v1-0-interactive-demo.png)
 
@@ -86,7 +98,7 @@ abs(L1 - L2) <= r <= L1 + L2
 
 ```mermaid
 flowchart LR
-    Model["model.py\n机械臂数据与约束"] --> Kinematics["kinematics.py\n正运动学与可达性"]
+    Model["model.py\n机械臂数据与约束"] --> Kinematics["kinematics.py\n正逆运动学与可达性"]
     Kinematics --> Visualization["visualization.py\n静态绘图"]
     Model --> Visualization
     Visualization --> App["app.py\n滑块、点击与轨迹"]
@@ -99,7 +111,8 @@ ros2-intelligent-manipulator/
 ├── docs/
 │   ├── images/                         # README 使用的真实运行截图
 │   ├── releases/v1.0.0.md              # Version 1.0 发布说明
-│   └── setup.md                        # 环境安装与故障排查
+│   ├── setup.md                        # 环境安装与故障排查
+│   └── versioning.md                   # 分支、标签和版本发布规则
 ├── examples/
 │   ├── check_reachability.py           # 命令行可达性示例
 │   ├── run_arm_2d.py                   # 静态机械臂示例
@@ -133,13 +146,14 @@ ruff check .
 ruff format --check .
 ```
 
-Version 1.0 验收时共有 **36 项测试**，覆盖以下内容：
+Version 1.0 验收时共有 **36 项测试**。当前 V2.0 开发分支共有 **53 项测试**，覆盖以下内容：
 
 - 合法和非法的数据模型输入。
 - 正运动学已知构型与浮点近似比较。
 - 工作空间内边界、外边界和不可达目标。
 - 绘图坐标是否来自正运动学结果。
 - 滑块更新、目标点击和轨迹记录。
+- 解析逆运动学、角度规范化、奇异检测和关节限制筛选。
 - Python 包版本与最小导入检查。
 
 ## V1.0 验收
@@ -161,8 +175,8 @@ Matplotlib 提供图形窗口、坐标轴、绘图元素、滑块控件和鼠标
 ## 已知限制
 
 - 当前是理想二维刚性机械臂，没有质量、惯量、摩擦或动力学。
-- 可达性只依据连杆长度形成的理想圆环，尚未把关节限制加入可达性求解。
-- 点击可达目标不会让机械臂自动移动，因为逆运动学尚未实现。
+- V1.0 的目标可达性只依据连杆长度形成的理想圆环；V2.0 数学层已经能够筛选关节限制。
+- 解析逆运动学已经实现，但尚未接入鼠标点击界面，因此点击目标暂时不会让机械臂自动移动。
 - 蓝色轨迹连接滑块事件采样到的位置，不是规划器生成的时间轨迹。
 - 当前没有碰撞检测、障碍物、PID 控制、ROS 2、Gazebo 或 MoveIt 2。
 
@@ -171,12 +185,12 @@ Matplotlib 提供图形窗口、坐标轴、绘图元素、滑块控件和鼠标
 | 版本 | 主题 | 状态 |
 | --- | --- | --- |
 | 1.0 | Python 二维机械臂基础模型 | 已完成 |
-| 2.0 | 逆运动学、轨迹规划、PID 和避障 | 未开始 |
+| 2.0 | 逆运动学、轨迹规划、PID 和避障 | 开发中：解析逆运动学与约束处理已完成 |
 | 3.0 | ROS 2、Gazebo、MoveIt 2 三维抓取 | 未开始 |
 | 4.0 | 虚拟相机视觉引导抓取 | 未开始 |
 | 5.0 | 任务规划、失败检测和自动恢复 | 未开始 |
 
-下一代开始前会先总结 Version 1.0 的代码、限制和升级理由，不会一次性生成后续版本。
+每一代都在上一代代码基础上升级。当前代完成测试与文档验收后才会合并到 `main` 并创建对应的永久标签。
 
 ## Release Notes
 
